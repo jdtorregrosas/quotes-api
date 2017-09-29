@@ -24,7 +24,16 @@ router.post('/', function(req, res, next) {
 router.get('/', function(req, res, next) {
   new Promise((resolve, reject) => {
     ref.on("value", function(snapshot) {
-      resolve(snapshot)
+      var quotes = []
+      snapshot.forEach((item) => {
+        var quote = item.val()
+        quotes.push({
+          id: item.key,
+          author: quote.author,
+          quote: quote.quote
+        })
+      });
+      resolve(quotes)
 
     }, function (errorObject) {
       reject(errorObject)
