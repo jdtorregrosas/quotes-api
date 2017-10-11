@@ -3,7 +3,7 @@ const router = express.Router();
 const admin = require("firebase-admin");
 const uuidv4 = require('uuid/v4');
 
-const serviceAccount = require("../quotes-60ae9-firebase-adminsdk-advrp-5868a29c5f.json");
+const serviceAccount = require("../quotes-e487678696e1.json");
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
