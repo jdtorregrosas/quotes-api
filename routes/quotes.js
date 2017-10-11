@@ -1,48 +1,72 @@
-var express = require('express');
-var router = express.Router();
-var admin = require("firebase-admin");
+const express = require('express');
+const router = express.Router();
+const admin = require("firebase-admin");
 const uuidv4 = require('uuid/v4');
 
-var serviceAccount = require("../quotes-60ae9-firebase-adminsdk-advrp-5868a29c5f.json");
+const serviceAccount = require("../quotes-60ae9-firebase-adminsdk-advrp-5868a29c5f.json");
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://quotes-60ae9.firebaseio.com/"
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://quotes-60ae9.firebaseio.com/"
 });
 
-var db = admin.database();
-var ref = db.ref("quotes");
+const db = admin.database();
+const ref = db.ref("quotes");
 
 /* GET users listing. */
 router.post('/', function(req, res, next) {
-  var id = uuidv4()
-  var quoteRequest = req.body
-  ref.child(id).set(quoteRequest);
-  return res.json(quoteRequest);
+    const id = uuidv4()
+    const quoteRequest = req.body
+    ref.child(id).set(quoteRequest);
+    return res.json(quoteRequest);
 });
 
 router.get('/', function(req, res, next) {
-  new Promise((resolve, reject) => {
-    ref.on("value", function(snapshot) {
-      var quotes = []
-      snapshot.forEach((item) => {
-        var quote = item.val()
-        quotes.push({
-          id: item.key,
-          author: quote.author,
-          quote: quote.quote
-        })
-      });
-      resolve(quotes)
+    new Promise((resolve, reject) => {
+        ref.on("value", function(snapshot) {
+            var quotes = []
+            snapshot.forEach((item) => {
+                const quote = item.val()
+                quotes.push({
+                    id: item.key,
+                    author: quote.author,
+                    quote: quote.quote
+                })
+            });
+            resolve(quotes)
 
-    }, function (errorObject) {
-      reject(errorObject)
-    });
-  }).then((success) => {
-    res.json(success)
-  }).catch((err)=>{
-    res.status(401).json(err)
-  })
+        }, function(errorObject) {
+            reject(errorObject)
+        });
+    }).then((success) => {
+        res.json(success)
+    }).catch((err) => {
+        res.status(401).json(err)
+    })
+});
+
+router.get('/random', function(req, res, next) {
+    new Promise((resolve, reject) => {
+        ref.on("value", function(snapshot) {
+            var quotes = []
+            snapshot.forEach((item) => {
+                const quote = item.val()
+                quotes.push({
+                    id: item.key,
+                    author: quote.author,
+                    quote: quote.quote
+                })
+            });
+            const randomPosition = Math.floor(Math.random() * quotes.length)
+            resolve(quotes[randomPosition])
+        }, function(errorObject) {
+            reject(errorObject)
+        });
+    }).then((success) => {
+        res.json(success)
+    }).catch((err) => {
+        res.status(401).json(err)
+    })
 });
 
 module.exports = router;
