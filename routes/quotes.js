@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const admin = require("firebase-admin");
 const uuidv4 = require('uuid/v4');
+const schedule = require('node-schedule');
 
 const serviceAccount = require("../quotes-e487678696e1.json");
 
@@ -61,41 +62,12 @@ router.post('/notification/token', function(req, res, next) {
 });
 
 router.get('/notification', function(req, res, next) {
-
-    notificationsRef.on("value", function(snapshot) {
-        var registrationTokens = []
-        snapshot.forEach((item) => {
-            const token = item.val()
-            registrationTokens.push(token);
-        });
-        // See the "Defining the message payload" section below for details
-        // on how to define a message payload.
-
-        generateRandomQuote()
-        .then((success) => {
-            var payload = {
-              data: success
-            }
-              // Send a message to the devices corresponding to the provided
-            // registration tokens.
-            admin.messaging().sendToDevice(registrationTokens, payload)
-              .then(function(response) {
-                // See the MessagingDevicesResponse reference documentation for
-                // the contents of response.
-                console.log("Successfully sent message:", response)
-                res.json(response)
-              })
-              .catch(function(error) {
-                console.log("Error sending message:", error)
-              })
-            
-        }).catch((err) => {
-            res.status(401).json(err)
-        })
-    }, function(errorObject) {
-        res.status(401).json(errorObject)
-    });
-    
+    pushNotificationRandomQuote()
+    .then((success) => {
+        res.json(success)
+    }).catch((err) => {
+        res.status(401).json(err)
+    })
 });
 
 var generateRandomQuote = () => new Promise((resolve, reject) => {
@@ -115,6 +87,51 @@ var generateRandomQuote = () => new Promise((resolve, reject) => {
         reject(errorObject)
     });
 })
+
+var pushNotificationRandomQuote = () => new Promise((resolve, reject) => {
+   
+        notificationsRef.on("value", function(snapshot) {
+        var registrationTokens = []
+        snapshot.forEach((item) => {
+            const token = item.val()
+            registrationTokens.push(token);
+        });
+        // See the "Defining the message payload" section below for details
+        // on how to define a message payload.
+
+        generateRandomQuote()
+        .then((success) => {
+            var payload = {
+              data: success
+            }
+            console.log(payload)
+              // Send a message to the devices corresponding to the provided
+            // registration tokens.
+            admin.messaging().sendToDevice(registrationTokens, payload)
+              .then(function(response) {
+                // See the MessagingDevicesResponse reference documentation for
+                // the contents of response.
+                console.log("Successfully sent message:", response)
+                resolve(response)
+              })
+              .catch(function(error) {
+                reject(error)
+                console.log("Error sending message:", error)
+              })
+            
+        }).catch((err) => {
+            reject(err)
+            res.status(401).json(err)
+        })
+    }, function(errorObject) {
+        reject(errorObject)
+        res.status(401).json(errorObject)
+    });
+})
+
+var dailyQuote = schedule.scheduleJob('0 0 7 * * *', () => {
+    pushNotificationRandomQuote()
+});
 
 
 module.exports = router;
